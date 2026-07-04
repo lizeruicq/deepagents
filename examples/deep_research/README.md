@@ -23,9 +23,10 @@ uv sync
 Set your API keys in your environment:
 
 ```bash
-export ANTHROPIC_API_KEY=your_anthropic_api_key_here  # Required for Claude model
-export GOOGLE_API_KEY=your_google_api_key_here        # Required for Gemini model ([get one here](https://ai.google.dev/gemini-api/docs))
-export TAVILY_API_KEY=your_tavily_api_key_here        # Required for web search ([get one here](https://www.tavily.com/)) with a generous free tier
+export KIMI_API_KEY=your_kimi_code_api_key_here    # Kimi Code (Moonshot) API key
+export KIMI_BASE_URL=https://api.kimi.com/coding/  # OpenAI-compatible endpoint
+export KIMI_MODEL=kimi-code                        # Model id from your Kimi Code console
+export TAVILY_API_KEY=your_tavily_api_key_here     # Required for web search ([get one here](https://www.tavily.com/)) with a generous free tier
 export LANGSMITH_API_KEY=your_langsmith_api_key_here  # [LangSmith API key](https://smith.langchain.com/settings) (free to sign up)
 ```
 
@@ -75,18 +76,21 @@ This provides a user-friendly chat interface and visualization of files in state
 
 ### Custom Model
 
-By default, `deepagents` uses `"claude-sonnet-4-5-20250929"`. You can customize this by passing any [LangChain model object](https://python.langchain.com/docs/integrations/chat/). See the Deep Agents package [README](https://github.com/langchain-ai/deepagents?tab=readme-ov-file#model) for more details.
+This example uses Kimi Code (Moonshot) via its OpenAI-compatible endpoint. You can swap in any other [LangChain model object](https://python.langchain.com/docs/integrations/chat/). See the Deep Agents package [README](https://github.com/langchain-ai/deepagents?tab=readme-ov-file#model) for more details.
 
 ```python
-from langchain.chat_models import init_chat_model
+import os
+
+from langchain_openai import ChatOpenAI
 from deepagents import create_deep_agent
 
-# Using Claude
-model = init_chat_model(model="anthropic:claude-sonnet-4-5-20250929", temperature=0.0)
-
-# Using Gemini
-from langchain_google_genai import ChatGoogleGenerativeAI
-model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview")
+# Kimi Code (Moonshot) via OpenAI-compatible endpoint.
+model = ChatOpenAI(
+    model=os.getenv("KIMI_MODEL", "kimi-code"),
+    temperature=0.0,
+    api_key=os.getenv("KIMI_API_KEY"),
+    base_url=os.getenv("KIMI_BASE_URL", "https://api.kimi.com/coding/"),
+)
 
 agent = create_deep_agent(
     model=model,
@@ -109,5 +113,5 @@ The deep research agent adds the following custom tools beyond the built-in deep
 
 | Tool Name | Description |
 |-----------|-------------|
-| `tavily_search` | Web search tool that uses Tavily purely as a URL discovery engine. Performs searches using Tavily API to find relevant URLs, fetches full webpage content via HTTP with proper User-Agent headers (avoiding 403 errors), converts HTML to markdown, and returns the complete content without summarization to preserve all information for the agent's analysis. Works with both Claude and Gemini models. |
+| `tavily_search` | Web search tool that uses Tavily purely as a URL discovery engine. Performs searches using Tavily API to find relevant URLs, fetches full webpage content via HTTP with proper User-Agent headers (avoiding 403 errors), converts HTML to markdown, and returns the complete content without summarization to preserve all information for the agent's analysis. Works with any chat model. |
 | `think_tool` | Strategic reflection mechanism that helps the agent pause and assess progress between searches, analyze findings, identify gaps, and plan next steps. |
