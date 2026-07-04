@@ -23,6 +23,17 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
+from dotenv import load_dotenv
+
+# Load .env (uv run does not load it automatically). Volcengine Ark AgentPlan
+# exposes the token as ANTHROPIC_AUTH_TOKEN (Bearer), but ChatAnthropic — and
+# string-spec subagents resolved via init_chat_model("anthropic:...") — only
+# read ANTHROPIC_API_KEY (X-Api-Key). Ark accepts either header, so mirror the
+# token when only ANTHROPIC_AUTH_TOKEN is set. Must run before any ChatAnthropic
+# is constructed.
+load_dotenv()
+if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+    os.environ["ANTHROPIC_API_KEY"] = os.environ["ANTHROPIC_AUTH_TOKEN"]
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
@@ -35,6 +46,7 @@ from rich.text import Text
 
 from deepagents import create_deep_agent
 from deepagents.backends import FilesystemBackend
+from langchain_anthropic import ChatAnthropic
 
 EXAMPLE_DIR = Path(__file__).parent
 console = Console()
@@ -164,8 +176,20 @@ def load_subagents(config_path: Path) -> list:
 
 
 def create_content_writer():
-    """Create a content writer agent configured by filesystem files."""
+    """Create a content writer agent configured by filesystem files.
+
+    Uses the Volcengine Ark Anthropic-compatible endpoint. Set
+    `ANTHROPIC_API_KEY` and `ANTHROPIC_BASE_URL` in `.env` (loaded at import
+    time); `ChatAnthropic` reads them automatically. If only
+    `ANTHROPIC_AUTH_TOKEN` is set (the Ark AgentPlan / Claude Code CLI
+    convention), it is mirrored to `ANTHROPIC_API_KEY` at import time.
+    """
+    model = ChatAnthropic(
+        model_name="ark-code-latest",
+        max_tokens=20_000,
+    )
     return create_deep_agent(
+        model=model,
         memory=["./AGENTS.md"],           # Loaded by MemoryMiddleware
         skills=["./skills/"],             # Loaded by SkillsMiddleware
         tools=[generate_cover, generate_social_image],  # Image generation
