@@ -4,10 +4,10 @@ This module creates a deep research agent with custom tools and prompts
 for conducting web research with strategic thinking and context management.
 """
 
+import os
 from datetime import datetime
 
-from langchain.chat_models import init_chat_model
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from deepagents import create_deep_agent
 
 from research_agent.prompts import (
@@ -44,11 +44,15 @@ research_sub_agent = {
     "tools": [tavily_search, think_tool],
 }
 
-# Model Gemini 3 
-# model = ChatGoogleGenerativeAI(model="gemini-3-pro-preview", temperature=0.0)
-
-# Model Claude 4.5
-model = init_chat_model(model="anthropic:claude-sonnet-4-5-20250929", temperature=0.0)
+# Kimi Code (Moonshot) via OpenAI-compatible endpoint.
+# Kimi also exposes an Anthropic-compatible API, but the Anthropic SDK posts to
+# the absolute path /v1/messages, which would drop the /coding/ base path.
+model = ChatOpenAI(
+    model=os.getenv("KIMI_MODEL", "kimi-code"),
+    temperature=1.0,  # Kimi Code only allows temperature=1
+    api_key=os.getenv("KIMI_API_KEY"),
+    base_url=os.getenv("KIMI_BASE_URL", "https://api.kimi.com/coding/v1"),
+)
 
 # Create the agent
 agent = create_deep_agent(
