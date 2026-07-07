@@ -4,7 +4,7 @@ Ralph is an autonomous looping pattern created by Geoff Huntley
 (https://ghuntley.com/ralph/). Each loop starts with fresh context.
 The filesystem and git serve as the agent's memory across iterations.
 
-Each iteration delegates to `run_non_interactive` from `deepagents-cli`,
+Each iteration delegates to `run_non_interactive` from `deepagents-code`,
 which handles model resolution, tool registration, checkpointing, streaming,
 and HITL approval. This script only orchestrates the outer loop.
 
@@ -37,7 +37,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-from deepagents_cli.non_interactive import run_non_interactive
+from deepagents_code.non_interactive import run_non_interactive
 from rich.console import Console
 
 logger = logging.getLogger(__name__)
@@ -178,7 +178,7 @@ Examples:
         default=0,
         help="Max iterations (0 = unlimited, default: unlimited)",
     )
-    parser.add_argument("--model", help="Model to use (e.g., claude-sonnet-4-6)")
+    parser.add_argument("--model", default="anthropic:kimi-k2.7-code", help="Model to use (e.g., anthropic:kimi-k2.7-code)")
     parser.add_argument(
         "--work-dir",
         help="Working directory for the agent (default: current directory)",
